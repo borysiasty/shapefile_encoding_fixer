@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/shapefile_encoding_fixer">
+        <file>encoding_fixer.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,14 @@
+0.4
+Produce more standards-compliant cpg files.
+More descriptive drop-down list items
+
+0.3
+Added Japanese Shift-JIS encoding
+Improved descriptions here and there
+
+0.2
+Don't consider standalone DBF tables as Shapefile layers
+
+0.1
+Initial version (03.03.2013)
+
