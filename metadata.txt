@@ -1,26 +1,19 @@
-# This file contains metadata for your plugin. Beginning
-# with version 1.8 this is the preferred way to supply information about a
-# plugin. The current method of embedding metadata in __init__.py will
-# be supported until version 2.0
-
-# This file should be included when you package your plugin.
-
 # Mandatory items:
-
 
 [general]
 name=Shapefile Encoding Fixer
 description=Fix broken encoding declaration in Shapefiles (LDID byte and .CPG file)
-version=0.4
-qgisMinimumVersion=1.7
+description[pl]=Naprawia błędną deklarację kodowania w plikach Shapefile (bajt LDID oraz plik .CPG)
+version=0.5
+qgisMinimumVersion=2.0
 
 # Optional items:
 
-homepage=
+homepage=http://hub.qgis.org/projects/shpencodingfixer
 tracker=http://hub.qgis.org/projects/shpencodingfixer/issues
-#repository=http://hub.qgis.org/projects/shpencodingfixer/repository
-#changelog=
+repository=http://github.com/borysiasty/shapefile_encoding_fixer
 
+#changelog=
 
 # tags are comma separated with spaces allowed
 tags=Shapefile, encoding, DBF, LDID, CPG

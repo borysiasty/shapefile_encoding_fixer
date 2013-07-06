@@ -14,30 +14,6 @@
 # *                                                                         *
 # ***************************************************************************
 
-def name():
-  return "Shapefile Encoding Fixer"
-
-def version():
-  return "Version 0.4"
-
-def description():
-  return "Fix broken encoding declaration in Shapefiles (LDID byte and .CPG file)"
-
-def qgisMinimumVersion():
-  return "1.7"
-
-def experimental():
-  return False
-
-def authorName():
-  return "Borys Jurgiel"
-
-def author():
-  return "Borys Jurgiel"
-
-def email():
-  return "qgis-at-borysjurgiel-dot-pl"
-
 def classFactory(iface):
   from encoding_fixer_plugin import EncodingFixerPlugin
   return EncodingFixerPlugin(iface)

@@ -155,18 +155,18 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
         # populate comboEncodingLDID
         index = 0
         for i in availableLdids:
-            self.comboEncodingLDID.addItem( '0x%s (%s %s)' % (QString.number(i[0], 16),i[1],i[2]), i[0] )
-            if '0X%s' % QString.number(i[0], 16).toUpper() == self.settings.value('/Plugin-EncodingFixer/lastLDIDEncoding', QVariant('0xc8')).toString().toUpper():
+            self.comboEncodingLDID.addItem( '%s (%s %s)' % (hex(i[0]),i[1],i[2]), i[0] )
+            if hex(i[0]).upper() == self.settings.value('/Plugin-EncodingFixer/lastLDIDEncoding', '0xc8', type=unicode).upper():
                 index = self.comboEncodingLDID.count()-1
         self.comboEncodingLDID.setCurrentIndex(index)
         # populate comboEncodingCPG
         index = 0
         for i in availableCpgs:
             self.comboEncodingCPG.addItem( '%s (%s)' % (i[0],i[1]), i[0] )
-            if i[1].upper() == self.settings.value('/Plugin-EncodingFixer/lastCPGEncoding', QVariant('UTF-8')).toString().toUpper():
+            if i[1].upper() == self.settings.value('/Plugin-EncodingFixer/lastCPGEncoding', 'UTF-8', type=unicode).upper():
                 index = self.comboEncodingCPG.count()-1
         self.comboEncodingCPG.setCurrentIndex(index)
-        lastMethod = self.settings.value('/Plugin-EncodingFixer/lastMethod', QVariant('ClearLDID')).toString()
+        lastMethod = self.settings.value('/Plugin-EncodingFixer/lastMethod', 'ClearLDID', type=unicode)
         if lastMethod == 'SetLDID':
             self.radioSetLDID.setChecked(Qt.Checked)
         elif lastMethod == 'SetCPG':
@@ -197,10 +197,10 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
 
 
     def layerSource(self, layer):
-        srcPath = layer.dataProvider().dataSourceUri().section('|',0,0)
+        srcPath = layer.dataProvider().dataSourceUri().split('|')[0]
         # without this one line code in win xp, srcName return something wrong,see below (patch from Volkan Kepoglu - thanks!)
         srcPath = srcPath.replace("\\","/")
-        if srcPath.right(4).toUpper() != '.SHP':
+        if not srcPath.upper().endswith('.SHP'):
             # if the path doesn't point to the shp file, maybe it is directory....
             qPath = QDir(srcPath)
             qPath.setNameFilters(['*.shp', '*.SHP'])
@@ -261,7 +261,7 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
                 cpgFile.close()
         # display info
         self.labelFile.setText(dbfFileName)
-        self.labelLDID.setText('<b>0x%s</b> %s' % (QString.number(ldid, 16), encoDesc))
+        self.labelLDID.setText('<b>%s</b> %s' % (hex(ldid), encoDesc))
         self.labelCPG.setText('<b>%s</b>' % (cpg or self.tr('NONE')))
         return True # no errors
 
@@ -269,7 +269,7 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
 
     def currentLayerChanged(self, idx):
         if not self.comboLayer.count(): return
-        self.shapefileName = self.comboLayer.itemData(idx).toString()
+        self.shapefileName = self.comboLayer.itemData(idx)
         if self.displayLayerInfo():
             self.setWidgetsEnabled(True)
         else:
@@ -298,11 +298,11 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
 
 
     def loadFile(self):
-        shapefileDir = self.settings.value('/Plugin-EncodingFixer/lastShapefileDirectory', QVariant('')).toString()
+        shapefileDir = self.settings.value('/Plugin-EncodingFixer/lastShapefileDirectory', '', type=unicode)
         fileName = QFileDialog.getOpenFileName(self, self.tr('Select file'), shapefileDir, 'ESRI Shapefile (*.shp)')
         if not fileName: return
         self.lastDirectory = QFileInfo(fileName).absoluteDir().path()
-        self.comboLayer.addItem(fileName, QVariant(fileName))
+        self.comboLayer.addItem(fileName, fileName)
         self.comboLayer.setCurrentIndex(self.comboLayer.count()-1)
 
 
@@ -335,21 +335,21 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
                 QgsMapLayerRegistry.instance().removeMapLayer(layer.getLayerID()) # API 1.7
         # apply the fix and store last settings
         if self.radioSetLDID.isChecked():
-            ldid = self.comboEncodingLDID.itemData(self.comboEncodingLDID.currentIndex()).toInt()[0]
+            ldid = self.comboEncodingLDID.itemData(self.comboEncodingLDID.currentIndex())
             self.doSetLDID(ldid)
             lastMethod = 'SetLDID'
-            self.settings.setValue('/Plugin-EncodingFixer/lastLDIDEncoding', QVariant( '0x%s' % QString.number(ldid, 16) ))
+            self.settings.setValue('/Plugin-EncodingFixer/lastLDIDEncoding', hex(ldid) )
         elif self.radioSetCPG.isChecked():
-            enc = self.comboEncodingCPG.itemData(self.comboEncodingCPG.currentIndex()).toString()
+            enc = self.comboEncodingCPG.itemData(self.comboEncodingCPG.currentIndex())
             self.doSetCPG(enc)
             lastMethod = 'SetCPG'
-            self.settings.setValue('/Plugin-EncodingFixer/lastCPGEncoding', QVariant(enc))
+            self.settings.setValue('/Plugin-EncodingFixer/lastCPGEncoding', enc)
         else: # radioClearLDID is checked
             self.doSetLDID(0)
             lastMethod = 'ClearLDID'
-        self.settings.setValue('/Plugin-EncodingFixer/lastMethod', QVariant(lastMethod))
+        self.settings.setValue('/Plugin-EncodingFixer/lastMethod', lastMethod)
         if self.lastDirectory:
-            self.settings.setValue('/Plugin-EncodingFixer/lastShapefileDirectory', QVariant(self.lastDirectory))
+            self.settings.setValue('/Plugin-EncodingFixer/lastShapefileDirectory', self.lastDirectory)
         # reload layer info
         self.displayLayerInfo()
         # reload layer and restore symbology (if was loaded previously)
@@ -387,7 +387,7 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
     def doSetCPG(self, enc, clearLDID = True):
         cpgFile = QFile(self.shapefileName[:-4]+'.cpg')
         if cpgFile.open(QIODevice.ReadWrite):
-            cpgFile.write(unicode(enc))
+            cpgFile.write(enc)
             cpgFile.close()
         else:
             QMessageBox.critical(self, self.tr("Shapefile Encoding Fixer"), self.tr(u"Can't write to the CPG file. Check permissions." ))
