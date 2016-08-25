@@ -2,16 +2,17 @@
 
 [general]
 name=Shapefile Encoding Fixer
-description=Fix broken encoding declaration in Shapefiles (LDID byte and .CPG file)
-description[pl]=Naprawia błędną deklarację kodowania w plikach Shapefile (bajt LDID oraz plik .CPG)
+description=Fix broken encoding declaration in Shapefiles
+description[pl]=Naprawia błędną deklarację kodowania w plikach Shapefile
+about=Allows to display and overwrite encoding declaration stored in the LDID byte as well as a .CPG file, so you don't need to turn off the autodetection any more.
 version=0.5
 qgisMinimumVersion=2.0
 
 # Optional items:
 
-homepage=http://hub.qgis.org/projects/shpencodingfixer
-tracker=http://hub.qgis.org/projects/shpencodingfixer/issues
-repository=http://github.com/borysiasty/shapefile_encoding_fixer
+homepage=https://github.com/borysiasty/shapefile_encoding_fixer
+tracker=https://github.com/borysiasty/shapefile_encoding_fixer/issues
+repository=https://github.com/borysiasty/shapefile_encoding_fixer
 
 #changelog=
 
