@@ -115,7 +115,8 @@ allCpgs=[
         ['1257','Baltic Windows CP-1257'],
         ['1258','Vietnam Windows CP-1258'],
         ['SJIS','Japanese Shift-JIS'],
-        ['Big5','Big5']
+        ['Big5','Big5'],
+        ['GBK','GBK']
 ]
 
 
