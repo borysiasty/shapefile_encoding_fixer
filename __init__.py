@@ -15,5 +15,5 @@
 # ***************************************************************************
 
 def classFactory(iface):
-  from encoding_fixer_plugin import EncodingFixerPlugin
+  from .encoding_fixer_plugin import EncodingFixerPlugin
   return EncodingFixerPlugin(iface)

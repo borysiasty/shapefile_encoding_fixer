@@ -6,7 +6,7 @@ description=Fix broken encoding declaration in Shapefiles
 description[pl]=Naprawia błędną deklarację kodowania w plikach Shapefile
 about=Allows to display and overwrite encoding declaration stored in the LDID byte as well as a .CPG file, so you don't need to turn off the autodetection any more.
 version=0.5.1
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 
 # Optional items:
 

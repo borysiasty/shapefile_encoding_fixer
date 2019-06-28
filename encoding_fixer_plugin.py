@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.gui import *
-from dlgencodingfixerbase import Ui_EncodingFixerDialogBase
-import resources_rc
+from PyQt5.QtWidgets import *
+from .dlgencodingfixerbase import Ui_EncodingFixerDialogBase
+from .resources_rc import *
 import os
 
 
@@ -135,13 +136,21 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
         self.shapefileName = None
         self.setWidgetsEnabled(False)
         self.generalInfoString = self.tr("NOTE: With this tool you can set or clear attribute table encoding <u>declaration</u> for Shapefiles. It doesn't change the real data encoding though.")
-        QObject.connect(self.buttonBox.button(QDialogButtonBox.Apply), SIGNAL('released()'), self.run)
-        QObject.connect(self.buttonBox.button(QDialogButtonBox.Ok), SIGNAL('released()'), self.runAndClose)
-        QObject.connect(self.buttonFile, SIGNAL('released()'), self.loadFile)
-        QObject.connect(self.comboLayer, SIGNAL("currentIndexChanged ( int )"), self.currentLayerChanged)
-        QObject.connect(self.radioClearLDID, SIGNAL("toggled ( bool )"), self.radioClearLDIDToggled)
-        QObject.connect(self.radioSetLDID, SIGNAL("toggled ( bool )"), self.radioSetLDIDToggled)
-        QObject.connect(self.radioSetCPG, SIGNAL("toggled ( bool )"), self.radioSetCPGToggled)
+        # QObject.connect(self.buttonBox.button(QDialogButtonBox.Apply), pyqtSignal('released()'), self.run)
+        # self.ui.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(self.accepted)
+        self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(self.run)
+        # QObject.connect(self.buttonBox.button(QDialogButtonBox.Ok), pyqtSignal('released()'), self.runAndClose)
+        self.buttonBox.button(QDialogButtonBox.Ok).clicked.connect(self.runAndClose)
+        # QObject.connect(self.buttonFile, pyqtSignal('released()'), self.loadFile)
+        self.buttonFile.released.connect(self.loadFile)
+        # QObject.connect(self.comboLayer, pyqtSignal("currentIndexChanged ( int )"), self.currentLayerChanged)
+        self.comboLayer.currentIndexChanged.connect(self.currentLayerChanged)
+        #QObject.connect(self.radioClearLDID, pyqtSignal("toggled ( bool )"), self.radioClearLDIDToggled)
+        self.radioClearLDID.toggled.connect(self.radioClearLDIDToggled)
+        #QObject.connect(self.radioSetLDID, pyqtSignal("toggled ( bool )"), self.radioSetLDIDToggled)
+        self.radioSetLDID.toggled.connect(self.radioSetLDIDToggled)
+        #QObject.connect(self.radioSetCPG, pyqtSignal("toggled ( bool )"), self.radioSetCPGToggled)
+        self.radioSetCPG.toggled.connect(self.radioSetCPGToggled)
         # populate comboLayer
         currentLayerIndex = 0
         for i in range(self.iface.mapCanvas().layerCount()):
@@ -330,23 +339,23 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
             QFile.remove( QDir.tempPath()+'/'+QFileInfo(self.shapefileName).baseName()+'.qml' )
             layer.saveNamedStyle( QDir.tempPath()+'/'+QFileInfo(self.shapefileName).baseName()+'.qml' )
             # remove layer
-            if hasattr( QgsMapLayerRegistry.instance(), "removeMapLayers" ):
-                QgsMapLayerRegistry.instance().removeMapLayers([layer.id()]) # API 1.8+
+            if hasattr( QgsProject.instance(), "removeMapLayers" ):
+                QgsProject.instance().removeMapLayers([layer.id()]) # API 1.8+
             else:
-                QgsMapLayerRegistry.instance().removeMapLayer(layer.getLayerID()) # API 1.7
+                QgsProject.instance().removeMapLayer(layer.getLayerID()) # API 1.7
         # apply the fix and store last settings
         if self.radioSetLDID.isChecked():
             ldid = self.comboEncodingLDID.itemData(self.comboEncodingLDID.currentIndex())
-            self.doSetLDID(ldid)
+            self.doSetLDID(ldid,False)
             lastMethod = 'SetLDID'
             self.settings.setValue('/Plugin-EncodingFixer/lastLDIDEncoding', hex(ldid) )
         elif self.radioSetCPG.isChecked():
             enc = self.comboEncodingCPG.itemData(self.comboEncodingCPG.currentIndex())
-            self.doSetCPG(enc)
+            self.doSetCPG(enc,True)
             lastMethod = 'SetCPG'
             self.settings.setValue('/Plugin-EncodingFixer/lastCPGEncoding', enc)
         else: # radioClearLDID is checked
-            self.doSetLDID(0)
+            self.doSetLDID(0,False)
             lastMethod = 'ClearLDID'
         self.settings.setValue('/Plugin-EncodingFixer/lastMethod', lastMethod)
         if self.lastDirectory:
@@ -364,10 +373,10 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
                 newLayer.dataProvider().setEncoding('UTF-8')
             newLayer.loadNamedStyle( QDir.tempPath()+'/'+QFileInfo(self.shapefileName).baseName()+'.qml' )
             QFile.remove( QDir.tempPath()+'/'+QFileInfo(self.shapefileName).baseName()+'.qml' )
-            if hasattr( QgsMapLayerRegistry.instance(), 'addMapLayers' ):
-                QgsMapLayerRegistry.instance().addMapLayers([newLayer]) # API 1.8+
+            if hasattr( QgsProject.instance(), 'addMapLayers' ):
+                QgsProject.instance().addMapLayers([newLayer]) # API 1.8+
             else:
-                QgsMapLayerRegistry.instance().addMapLayer(newLayer)  # API 1.7
+                QgsProject.instance().addMapLayer(newLayer)  # API 1.7
 
 
 
@@ -388,7 +397,10 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
     def doSetCPG(self, enc, clearLDID = True):
         cpgFile = QFile(self.shapefileName[:-4]+'.cpg')
         if cpgFile.open(QIODevice.ReadWrite):
-            cpgFile.write(enc)
+            cpgFile.write(QMetaType.QString(enc).toUtf8())
+            #QTextStream stream(&cpgFile)
+            #stream << enc << endl; # "123"
+            # 为写入文本的字符 - - endl表示换行 - - 理解就ok；
             cpgFile.close()
         else:
             QMessageBox.critical(self, self.tr("Shapefile Encoding Fixer"), self.tr(u"Can't write to the CPG file. Check permissions." ))
@@ -427,7 +439,9 @@ class EncodingFixerPlugin():
         self.iface.registerMainWindowAction(self.action, "Ctrl+Shift+E")
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu(QCoreApplication.translate("EncodingFixerPlugin","&Shapefile Encoding Fixer"), self.action)
-        QObject.connect(self.action, SIGNAL("triggered()"), self.run)
+        # QObject.connect(self.action, pyqtSignal("triggered()"), self.run)
+        # self.action.isSignalConnected(pyqtSignal("triggered()"))
+        self.action.triggered.connect(self.run)
 
 
     def unload(self):
