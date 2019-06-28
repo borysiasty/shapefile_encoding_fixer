@@ -383,7 +383,7 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
     def doSetLDID(self, ldid, removeCPG=True):
         dbfFile = QFile(self.shapefileName[:-4]+'.dbf')
         if dbfFile.open(QIODevice.ReadWrite) and dbfFile.seek(29):
-            dbfFile.write(chr(ldid))
+            dbfFile.write(chr(ldid).encode('utf-8'))
             dbfFile.close()
         else:
             QMessageBox.critical(self, self.tr("Shapefile Encoding Fixer"), self.tr(u"Can't write to the DBF file. Check permissions.") )
@@ -392,12 +392,17 @@ class EncodingFixerDialog (QDialog, Ui_EncodingFixerDialogBase):
             QFile(self.shapefileName[:-4]+'.cpg').remove()
             QFile(self.shapefileName[:-4]+'.CPG').remove()
 
-
+    def to_str(bytes_or_str):
+        if isinstance(bytes_or_str, str):
+            value = bytes_or_str.encode('utf-8')
+        else:
+            value = bytes_or_str
+        return value  # Instance of bytes
 
     def doSetCPG(self, enc, clearLDID = True):
         cpgFile = QFile(self.shapefileName[:-4]+'.cpg')
         if cpgFile.open(QIODevice.ReadWrite):
-            cpgFile.write(QMetaType.QString(enc).toUtf8())
+            cpgFile.write(enc.encode('utf-8'))
             #QTextStream stream(&cpgFile)
             #stream << enc << endl; # "123"
             # 为写入文本的字符 - - endl表示换行 - - 理解就ok；
