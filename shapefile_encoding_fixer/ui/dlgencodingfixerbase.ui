@@ -29,10 +29,6 @@
   <property name="windowTitle">
    <string>Fix Shapefile Encoding</string>
   </property>
-  <property name="windowIcon">
-   <iconset resource="resources.qrc">
-    <normaloff>:/plugins/shapefile_encoding_fixer/encoding_fixer.png</normaloff>:/plugins/shapefile_encoding_fixer/encoding_fixer.png</iconset>
-  </property>
   <property name="whatsThis">
    <string/>
   </property>
@@ -322,9 +318,6 @@
   <tabstop>radioSetCPG</tabstop>
   <tabstop>comboEncodingCPG</tabstop>
  </tabstops>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>
