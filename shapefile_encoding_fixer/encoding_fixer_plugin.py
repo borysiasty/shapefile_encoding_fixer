@@ -265,7 +265,8 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             cpgFile = QFile(cpgFileName)
             if cpgFile.open(QIODevice.ReadOnly):
                 cpg = cpgFile.readLineData(32)
-                if cpg: cpg = cpg.strip()
+                if cpg:
+                    cpg = cpg.strip()
                 cpgFile.close()
         # display info
         self.labelFile.setText(dbfFileName)
@@ -303,7 +304,8 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         self.accept()
 
     def run(self):
-        if not self.shapefileName: return
+        if not self.shapefileName:
+            return
         # find if the layer is loaded to QGIS
         layer = None
         for i in range(self.iface.mapCanvas().layerCount()):
