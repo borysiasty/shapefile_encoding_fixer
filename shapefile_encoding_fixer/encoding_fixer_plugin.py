@@ -372,13 +372,6 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             QFile(self.shapefileName[:-4] + '.cpg').remove()
             QFile(self.shapefileName[:-4] + '.CPG').remove()
 
-    def to_str(bytes_or_str):
-        if isinstance(bytes_or_str, str):
-            value = bytes_or_str.encode('utf-8')
-        else:
-            value = bytes_or_str
-        return value  # Instance of bytes
-
     def doSetCPG(self, enc, clearLDID=True):
         cpgFile = QFile(self.shapefileName[:-4] + '.cpg')
         if cpgFile.open(QIODevice.ReadWrite):
