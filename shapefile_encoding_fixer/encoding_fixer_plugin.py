@@ -147,7 +147,6 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         self.iface = parent
         self.setupUi(self)
         self.setWindowIcon(GuiUtils.get_icon('encoding_fixer.png'))
-        self.settings = QgsSettings()
         self.lastDirectory = None
         self.shapefileName = None
         self.setWidgetsEnabled(False)
@@ -155,27 +154,24 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             "NOTE: With this tool you can set or clear attribute table encoding <u>declaration</u> for Shapefiles. It doesn't change the real data encoding though.")
         self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(self.run)
         self.buttonBox.button(QDialogButtonBox.Ok).clicked.connect(self.runAndClose)
-        self.buttonFile.released.connect(self.loadFile)
-        self.comboLayer.currentIndexChanged.connect(self.currentLayerChanged)
+
+        settings = QgsSettings()
+
+        self.file_widget.setFilter(self.tr('Shapefiles') + ' (*.shp *.SHP)')
+        self.file_widget.setDialogTitle(self.tr('Input Shapefile'))
+        self.file_widget.setDefaultRoot( settings.value("plugins/shapefile-encoding-fixer/last_directory", type=str))
+
+        self.file_widget.fileChanged.connect(self.file_changed)
+
         self.radioClearLDID.toggled.connect(self.radioClearLDIDToggled)
         self.radioSetLDID.toggled.connect(self.radioSetLDIDToggled)
         self.radioSetCPG.toggled.connect(self.radioSetCPGToggled)
-        # populate comboLayer
-        currentLayerIndex = 0
-        for i in range(self.iface.mapCanvas().layerCount()):
-            layer = self.iface.mapCanvas().layer(i)
-            if layer.type() == layer.VectorLayer and layer.dataProvider().storageType() == 'ESRI Shapefile':
-                layerSource = self.layerSource(layer)
-                if layerSource:
-                    self.comboLayer.addItem(layer.name(), layerSource)
-                    if layer == self.iface.activeLayer():
-                        currentLayerIndex = self.comboLayer.count() - 1
-        self.comboLayer.setCurrentIndex(currentLayerIndex)
+
         # populate comboEncodingLDID
         index = 0
         for i in availableLdids:
             self.comboEncodingLDID.addItem('%s (%s %s)' % (hex(i[0]), i[1], i[2]), i[0])
-            if hex(i[0]).upper() == self.settings.value('/Plugin-EncodingFixer/lastLDIDEncoding', '0xc8',
+            if hex(i[0]).upper() == settings.value('plugins/shapefile-encoding-fixer/last_ldid_encoding', '0xc8',
                                                         type=str).upper():
                 index = self.comboEncodingLDID.count() - 1
         self.comboEncodingLDID.setCurrentIndex(index)
@@ -183,10 +179,10 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         index = 0
         for i in availableCpgs:
             self.comboEncodingCPG.addItem('%s (%s)' % (i[0], i[1]), i[0])
-            if i[1].upper() == self.settings.value('/Plugin-EncodingFixer/lastCPGEncoding', 'UTF-8', type=str).upper():
+            if i[1].upper() == settings.value('plugins/shapefile-encoding-fixer/last_cpg_encoding', 'UTF-8', type=str).upper():
                 index = self.comboEncodingCPG.count() - 1
         self.comboEncodingCPG.setCurrentIndex(index)
-        lastMethod = self.settings.value('/Plugin-EncodingFixer/lastMethod', 'ClearLDID', type=str)
+        lastMethod = settings.value('plugins/shapefile-encoding-fixer/last_method', 'ClearLDID', type=str)
         if lastMethod == 'SetLDID':
             self.radioSetLDID.setChecked(Qt.Checked)
         elif lastMethod == 'SetCPG':
@@ -277,9 +273,9 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         self.labelCPG.setText('<b>%s</b>' % (cpg or self.tr('NONE')))
         return True  # no errors
 
-    def currentLayerChanged(self, idx):
-        if not self.comboLayer.count(): return
-        self.shapefileName = self.comboLayer.itemData(idx)
+    def file_changed(self, path):
+        QgsSettings().setValue("plugins/shapefile-encoding-fixer/last_directory", QFileInfo(path).absoluteDir().path())
+        self.shapefileName = path
         if self.displayLayerInfo():
             self.setWidgetsEnabled(True)
         else:
@@ -301,15 +297,6 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         if state:
             self.labelMethodDescription.setText(self.tr(
                 "CPG is a small additional file for Shapefile. It's an alternative for LDID byte, and it supports much more encodings. Creating CPG file will automatically clear the concurrent LDID byte, if set. If you can't find your encoding, please <a href='http://hub.qgis.org/projects/shpencodingfixer/issues'>request it</a>.") + "<br/><br/>" + self.generalInfoString)
-
-    def loadFile(self):
-        shapefileDir = self.settings.value('/Plugin-EncodingFixer/lastShapefileDirectory', '', type=str)
-        fileName, _ = QFileDialog.getOpenFileName(self, self.tr('Select file'), shapefileDir, 'ESRI Shapefile (*.shp)')
-        if not fileName:
-            return
-        self.lastDirectory = QFileInfo(fileName).absoluteDir().path()
-        self.comboLayer.addItem(fileName, fileName)
-        self.comboLayer.setCurrentIndex(self.comboLayer.count() - 1)
 
     def runAndClose(self):
         self.run()
@@ -338,22 +325,22 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             else:
                 QgsProject.instance().removeMapLayer(layer.getLayerID())  # API 1.7
         # apply the fix and store last settings
+        settings = QgsSettings()
         if self.radioSetLDID.isChecked():
             ldid = self.comboEncodingLDID.itemData(self.comboEncodingLDID.currentIndex())
             self.doSetLDID(ldid, False)
             lastMethod = 'SetLDID'
-            self.settings.setValue('/Plugin-EncodingFixer/lastLDIDEncoding', hex(ldid))
+            settings.setValue('plugins/shapefile-encoding-fixer/last_ldid_encoding', hex(ldid))
         elif self.radioSetCPG.isChecked():
             enc = self.comboEncodingCPG.itemData(self.comboEncodingCPG.currentIndex())
             self.doSetCPG(enc, True)
             lastMethod = 'SetCPG'
-            self.settings.setValue('/Plugin-EncodingFixer/lastCPGEncoding', enc)
+            settings.setValue('plugins/shapefile-encoding-fixer/last_cpg_encoding', enc)
         else:  # radioClearLDID is checked
             self.doSetLDID(0, False)
             lastMethod = 'ClearLDID'
-        self.settings.setValue('/Plugin-EncodingFixer/lastMethod', lastMethod)
-        if self.lastDirectory:
-            self.settings.setValue('/Plugin-EncodingFixer/lastShapefileDirectory', self.lastDirectory)
+        settings.setValue('plugins/shapefile-encoding-fixer/last_method', lastMethod)
+
         # reload layer info
         self.displayLayerInfo()
         # reload layer and restore symbology (if was loaded previously)
@@ -368,10 +355,7 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
                 newLayer.dataProvider().setEncoding('UTF-8')
             newLayer.loadNamedStyle(QDir.tempPath() + '/' + QFileInfo(self.shapefileName).baseName() + '.qml')
             QFile.remove(QDir.tempPath() + '/' + QFileInfo(self.shapefileName).baseName() + '.qml')
-            if hasattr(QgsProject.instance(), 'addMapLayers'):
-                QgsProject.instance().addMapLayers([newLayer])  # API 1.8+
-            else:
-                QgsProject.instance().addMapLayer(newLayer)  # API 1.7
+            QgsProject.instance().addMapLayers([newLayer])
 
     def doSetLDID(self, ldid, removeCPG=True):
         dbfFile = QFile(self.shapefileName[:-4] + '.dbf')
