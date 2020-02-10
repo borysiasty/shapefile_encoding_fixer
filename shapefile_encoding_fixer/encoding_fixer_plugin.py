@@ -16,7 +16,6 @@ from qgis.PyQt.QtCore import (
 from qgis.PyQt.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QFileDialog,
     QMessageBox,
     QAction
 )
@@ -159,7 +158,7 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
 
         self.file_widget.setFilter(self.tr('Shapefiles') + ' (*.shp *.SHP)')
         self.file_widget.setDialogTitle(self.tr('Input Shapefile'))
-        self.file_widget.setDefaultRoot( settings.value("plugins/shapefile-encoding-fixer/last_directory", type=str))
+        self.file_widget.setDefaultRoot(settings.value("plugins/shapefile-encoding-fixer/last_directory", type=str))
 
         self.file_widget.fileChanged.connect(self.file_changed)
 
@@ -172,14 +171,15 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         for i in availableLdids:
             self.comboEncodingLDID.addItem('%s (%s %s)' % (hex(i[0]), i[1], i[2]), i[0])
             if hex(i[0]).upper() == settings.value('plugins/shapefile-encoding-fixer/last_ldid_encoding', '0xc8',
-                                                        type=str).upper():
+                                                   type=str).upper():
                 index = self.comboEncodingLDID.count() - 1
         self.comboEncodingLDID.setCurrentIndex(index)
         # populate comboEncodingCPG
         index = 0
         for i in availableCpgs:
             self.comboEncodingCPG.addItem('%s (%s)' % (i[0], i[1]), i[0])
-            if i[1].upper() == settings.value('plugins/shapefile-encoding-fixer/last_cpg_encoding', 'UTF-8', type=str).upper():
+            if i[1].upper() == settings.value('plugins/shapefile-encoding-fixer/last_cpg_encoding', 'UTF-8',
+                                              type=str).upper():
                 index = self.comboEncodingCPG.count() - 1
         self.comboEncodingCPG.setCurrentIndex(index)
         lastMethod = settings.value('plugins/shapefile-encoding-fixer/last_method', 'ClearLDID', type=str)
