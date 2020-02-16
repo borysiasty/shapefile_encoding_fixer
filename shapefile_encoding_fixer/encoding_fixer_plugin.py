@@ -266,7 +266,7 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             if cpgFile.open(QIODevice.ReadOnly):
                 cpg = cpgFile.readLineData(32)
                 if cpg:
-                    cpg = cpg.strip()
+                    cpg = cpg.strip().decode('utf-8')
                 cpgFile.close()
         # display info
         self.labelFile.setText(dbfFileName)
@@ -393,9 +393,12 @@ class EncodingFixerPlugin():
         self.iface = iface
         # i18n
         pluginPath = QFileInfo(os.path.realpath(__file__)).path()  # patch by Régis Haubourg
-        localeName = QLocale.system().name()
+        if QgsSettings().value('locale/overrideFlag', type=bool):
+            localeName = QgsSettings().value('locale/userLocale', '')[:2]
+        else:
+            localeName = QLocale.system().name()[:2]
         if QFileInfo(pluginPath).exists():
-            self.localePath = pluginPath + "/i18n/encoding_fixer_" + localeName + ".qm"
+            self.localePath = pluginPath + "/i18n/" + localeName + ".qm"
             if QFileInfo(self.localePath).exists():
                 self.translator = QTranslator()
                 self.translator.load(self.localePath)
