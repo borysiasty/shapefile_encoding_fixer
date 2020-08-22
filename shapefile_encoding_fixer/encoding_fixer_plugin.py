@@ -374,7 +374,7 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
 
     def doSetCPG(self, enc, clearLDID=True):
         cpgFile = QFile(self.shapefileName[:-4] + '.cpg')
-        if cpgFile.open(QIODevice.ReadWrite):
+        if cpgFile.open(QIODevice.WriteOnly):
             cpgFile.write(enc.encode('utf-8'))
             # QTextStream stream(&cpgFile)
             # stream << enc << endl; # "123"
