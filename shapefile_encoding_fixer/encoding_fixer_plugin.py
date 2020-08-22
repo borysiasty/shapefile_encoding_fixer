@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 import os
 
 from qgis.PyQt.QtCore import (
@@ -271,7 +270,16 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         # display info
         self.labelFile.setText(dbfFileName)
         self.labelLDID.setText('<b>%s</b> %s' % (hex(ldid), encoDesc))
-        self.labelCPG.setText('<b>%s</b>' % (cpg or self.tr('NONE')))
+        if cpg:
+            print (cpg, type(cpg))
+            cpgDict = dict(allCpgs)
+            if cpg in cpgDict:
+                cpgDesc = '<b>%s</b> (%s)' % (cpg, cpgDict[cpg])
+            else:
+                cpgDesc = '<b>%s</b>' % cpg
+        else:
+            cpgDesc = '<b>NONE</b>'
+        self.labelCPG.setText(cpgDesc)
         return True  # no errors
 
     def file_changed(self, path):
@@ -308,29 +316,26 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             return
         # find if the layer is loaded to QGIS
         layer = None
+        layerName = False
         for i in range(self.iface.mapCanvas().layerCount()):
             if self.layerSource(self.iface.mapCanvas().layer(i)) == self.shapefileName:
                 layer = self.iface.mapCanvas().layer(i)
-        layer_name = ''
+                layerName = layer.name()
         if layer:
             if layer.isEditable():
                 QMessageBox.warning(self, self.tr("Shapefile Encoding Fixer"), self.tr(
                     "The layer is in editing mode. You have to save changes and close the editing mode first."))
                 return
-            layer_name = layer.name()
             # save layer symbology
             QFile.remove(QDir.tempPath() + '/' + QFileInfo(self.shapefileName).baseName() + '.qml')
             layer.saveNamedStyle(QDir.tempPath() + '/' + QFileInfo(self.shapefileName).baseName() + '.qml')
             # remove layer
-            if hasattr(QgsProject.instance(), "removeMapLayers"):
-                QgsProject.instance().removeMapLayers([layer.id()])  # API 1.8+
-            else:
-                QgsProject.instance().removeMapLayer(layer.getLayerID())  # API 1.7
+            QgsProject.instance().removeMapLayer(layer.id())
         # apply the fix and store last settings
         settings = QgsSettings()
         if self.radioSetLDID.isChecked():
             ldid = self.comboEncodingLDID.itemData(self.comboEncodingLDID.currentIndex())
-            self.doSetLDID(ldid, False)
+            self.doSetLDID(ldid, True)
             lastMethod = 'SetLDID'
             settings.setValue('plugins/shapefile-encoding-fixer/last_ldid_encoding', hex(ldid))
         elif self.radioSetCPG.isChecked():
@@ -339,21 +344,22 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
             lastMethod = 'SetCPG'
             settings.setValue('plugins/shapefile-encoding-fixer/last_cpg_encoding', enc)
         else:  # radioClearLDID is checked
-            self.doSetLDID(0, False)
+            self.doSetLDID(0, True)
             lastMethod = 'ClearLDID'
         settings.setValue('plugins/shapefile-encoding-fixer/last_method', lastMethod)
 
         # reload layer info
         self.displayLayerInfo()
         # reload layer and restore symbology (if was loaded previously)
-        if layer:
-            newLayer = QgsVectorLayer(self.shapefileName, layer_name, 'ogr')
+        if layerName:
+            newLayer = QgsVectorLayer(self.shapefileName, layerName, 'ogr')
             if not newLayer.isValid():
                 QMessageBox.critical(self, self.tr("Shapefile Encoding Fixer"),
                                      self.tr("Oooops, I can't reload the modified layer :("))
                 return
             if lastMethod != 'ClearLDID':
                 # QGIS will try to set the provider encoding to that set in AddVectorLayer dialog. If ldid is not cleared, the only valid is UTF-8
+                # WARNING: Not sure if it works properly. On one machine should be completely removed, but it doesn't work on another.
                 newLayer.dataProvider().setEncoding('UTF-8')
             newLayer.loadNamedStyle(QDir.tempPath() + '/' + QFileInfo(self.shapefileName).baseName() + '.qml')
             QFile.remove(QDir.tempPath() + '/' + QFileInfo(self.shapefileName).baseName() + '.qml')
@@ -362,7 +368,11 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
     def doSetLDID(self, ldid, removeCPG=True):
         dbfFile = QFile(self.shapefileName[:-4] + '.dbf')
         if dbfFile.open(QIODevice.ReadWrite) and dbfFile.seek(29):
-            dbfFile.write(chr(ldid).encode('utf-8'))
+            hexLdid = hex(ldid)[2:] # Convert to hex string and drop the \x previx
+            if len(hexLdid) == 1:
+                # For ldid = 0, hex(ldid)[2:] = '0' while bytes.fromhex expects '00'
+                hexLdid += '0'
+            dbfFile.write(bytes.fromhex(hexLdid))
             dbfFile.close()
         else:
             QMessageBox.critical(self, self.tr("Shapefile Encoding Fixer"),
@@ -412,8 +422,6 @@ class EncodingFixerPlugin():
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu(QCoreApplication.translate("EncodingFixerPlugin", "&Shapefile Encoding Fixer"),
                                    self.action)
-        # QObject.connect(self.action, pyqtSignal("triggered()"), self.run)
-        # self.action.isSignalConnected(pyqtSignal("triggered()"))
         self.action.triggered.connect(self.run)
 
     def unload(self):
