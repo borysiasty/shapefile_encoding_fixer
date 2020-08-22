@@ -1,3 +1,6 @@
+0.7
+Fixed wrong CPG file content (bug #4). Fixed not working LDID setting.
+
 0.6
 Ported to QGIS 3 and updated. Chinese translation added. Patches by Loverto and Nyall Dawson.
 
