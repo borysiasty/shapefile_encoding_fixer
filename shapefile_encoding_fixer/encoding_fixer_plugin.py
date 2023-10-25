@@ -305,7 +305,7 @@ class EncodingFixerDialog(QDialog, FORM_CLASS):
         self.comboEncodingCPG.setEnabled(state and self.radioSetCPG.isEnabled())
         if state:
             self.labelMethodDescription.setText(self.tr(
-                "CPG is a small additional file for Shapefile. It's an alternative for LDID byte, and it supports much more encodings. Creating CPG file will automatically clear the concurrent LDID byte, if set. If you can't find your encoding, please <a href='http://hub.qgis.org/projects/shpencodingfixer/issues'>request it</a>.") + "<br/><br/>" + self.generalInfoString)
+                "CPG is a small additional file for Shapefile. It's an alternative for LDID byte, and it supports much more encodings. Creating CPG file will automatically clear the concurrent LDID byte, if set.") + "<br/><br/>" + self.generalInfoString)
 
     def runAndClose(self):
         self.run()

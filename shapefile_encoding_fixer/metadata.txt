@@ -5,7 +5,7 @@ name=Shapefile Encoding Fixer
 description=Fix broken encoding declaration in ESRI Shapefiles
 description[pl]=Naprawia błędną deklarację kodowania w plikach ESRI Shapefile
 about=Allows to display and overwrite encoding declaration stored in the LDID byte as well as a .CPG file, so you don't need to turn off the autodetection any more.
-version=0.7
+version=0.7.1
 qgisMinimumVersion=3.0
 
 # Optional items:
